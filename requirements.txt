@@ -1,4 +1,4 @@
 streamlit
-scraperfc
 google-generativeai
 pandas
+scipy
