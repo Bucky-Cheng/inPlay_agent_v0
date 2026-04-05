@@ -200,11 +200,13 @@ if match_id:
 2. 預測接下來到完場的進球機率和總進球數。
 3. 預測總進球數和進球數區間
 4. 輸出修正係數: 
-    {{"h_atk": 1.0, // 基準1.0
+    {{
+      "h_atk": 1.0, // 基準1.0
       "a_atk": 1.0, // 基準1.0
       "rho_adj": 0.0,
       "game_state": "open",  // 或 "locked"
-      "momentum_score": 1.4 // 1.0 到 2.0 之間，代表比賽瘋狂程度}}
+      "momentum_score": 1.4 // 1.0 到 2.0 之間，代表比賽瘋狂程度
+      }}
     """
                 st.code(full_prompt, language="text")
 
