@@ -147,7 +147,7 @@ def get_sofascore_analysis_payload(match_id):
     }
 
     # Use separators=(',', ':') to strip whitespace for token efficiency
-    return json.dumps(full_payload, ensure_ascii=False, separators=(',', ':'))
+    return h_score, a_score, json.dumps(full_payload, ensure_ascii=False, separators=(',', ':'))
 
 # --- HOW TO USE ---
 # match_id = 11352342
@@ -186,20 +186,20 @@ if match_id:
             try:
                 
                 #events_json = json.dumps(recent_events, ensure_ascii=False, indent=2)
-                commentry_json = get_sofascore_analysis_payload(match_id)
+                home_score, away_score, commentry_json = get_sofascore_analysis_payload(match_id)
                 # --- 1. 生成可複製的 Prompt ---
                 st.subheader("📋 可複製的 AI Agent Prompt")
                 full_prompt = f"""你是一位足球博弈專家,分析以下實時足球數據，特別注意進球後雙方的戰術節奏變化：
-實時比分：{commentry_json['home_score']}-{commentry_json['away_score']}
+實時比分：{home_score}-{away_score}
 【數據流】: {commentry_json}
 【要求】:
 1. 分析主客隊進攻強度與換人戰術意圖。
 2. 判斷比賽當前處於哪種狀態：
     "locked" = 雙方保守，節奏緩慢，重兵囤積中場。
     "open" = 均衡被打破，大開大合，攻防轉換極快，反擊空間巨大。
-3. 預測接下來到完場的進球機率和總進球數。
-4. 預測總進球數和進球數區間
-5. 輸出修正係數: 
+2. 預測接下來到完場的進球機率和總進球數。
+3. 預測總進球數和進球數區間
+4. 輸出修正係數: 
     {{"h_atk": 1.0, // 基準1.0
       "a_atk": 1.0, // 基準1.0
       "rho_adj": 0.0,
