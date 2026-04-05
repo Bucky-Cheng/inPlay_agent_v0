@@ -48,6 +48,7 @@ def get_sofascore_analysis_payload(match_id):
     stats_url = f"https://api.sofascore.com/api/v1/event/{match_id}/statistics"
     incidents_url = f"https://api.sofascore.com/api/v1/event/{match_id}/incidents"
     comm_url = f"https://api.sofascore.com/api/v1/event/{match_id}/comments"
+    score_url = f"https://api.sofascore.com/api/v1/event/{match_id}"
 
     # --- PART A: TEAM TOTALS ---
     team_totals = {}
@@ -127,9 +128,19 @@ def get_sofascore_analysis_payload(match_id):
                 "goal": c.get('isGoal', False)
             })
 
-    # --- PART C: FINAL PAYLOAD ---
+    # --- PART C: CURRENT SCORE ---
+    score_res = scraper.get(score_url, headers=headers)
+    if score_res.status_code == 200:
+        data = score_res.json().get('event', {})
+        h_score = data.get('homeScore', {}).get('current', 0)
+        a_score = data.get('awayScore', {}).get('current', 0)
+
+
+    # --- PART D: FINAL PAYLOAD ---
     # Combine everything and sort commentary chronologically
     full_payload = {
+        "home_score": h_score,
+        "away_score": a_score,
         "stats": team_totals,
         "key_events": sorted(clean_incidents, key=lambda x: x['m']),
         "commentary": sorted(enhanced_comm, key=lambda x: x['m'])
@@ -178,12 +189,23 @@ if match_id:
                 commentry_json = get_sofascore_analysis_payload(match_id)
                 # --- 1. 生成可複製的 Prompt ---
                 st.subheader("📋 可複製的 AI Agent Prompt")
-                full_prompt = f"""你是一位足球博弈專家。請解析以下實時事件數據：
+                full_prompt = f"""你是一位足球博弈專家,分析以下實時足球數據，特別注意進球後雙方的戰術節奏變化：
+實時比分：{commentry_json['home_score']}-{commentry_json['away_score']}
 【數據流】: {commentry_json}
 【要求】:
 1. 分析主客隊進攻強度與換人戰術意圖。
-2. 預測接下來15分鐘的進球機率。
-3. 輸出修正係數: {{"h_atk": 1.0, "a_atk": 1.0, "rho_adj": 0.0}} (基準1.0)"""
+2. 判斷比賽當前處於哪種狀態：
+    "locked" = 雙方保守，節奏緩慢，重兵囤積中場。
+    "open" = 均衡被打破，大開大合，攻防轉換極快，反擊空間巨大。
+2. 預測接下來到完場的進球機率和總進球數。
+3. 預測總進球數和進球數區間
+4. 輸出修正係數: 
+    {{"h_atk": 1.0, // 基準1.0
+      "a_atk": 1.0, // 基準1.0
+      "rho_adj": 0.0,
+      "game_state": "open",  // 或 "locked"
+      "momentum_score": 1.4 // 1.0 到 2.0 之間，代表比賽瘋狂程度}}
+    """
                 st.code(full_prompt, language="text")
 
                 # --- 2. 調用 Gemini 分析 ---
